@@ -2,14 +2,20 @@ import { GoogleGenAI } from "@google/genai";
 import { Lesson, ChatMessage } from "../types";
 
 // Initialize the API client
-// Note: process.env.API_KEY is assumed to be available.
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+// Use GEMINI_API_KEY from environment variables
+const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || '' });
 
 export const sendMessageToGemini = async (
   messages: ChatMessage[],
   currentLesson: Lesson | null
 ): Promise<string> => {
   try {
+    // Check if API key is available
+    if (!process.env.GEMINI_API_KEY) {
+      console.error("GEMINI_API_KEY is not set");
+      return "Xin lỗi, API key chưa được cấu hình. Vui lòng liên hệ quản trị viên.";
+    }
+
     // Construct lesson context
     let contextStr = "Bạn là gia sư toán học lớp 7, hỗ trợ học sinh học bộ sách Chân Trời Sáng Tạo.";
     
@@ -54,6 +60,17 @@ export const sendMessageToGemini = async (
 
   } catch (error) {
     console.error("Gemini API Error:", error);
+    
+    // More specific error messages
+    if (error instanceof Error) {
+      if (error.message.includes('API key')) {
+        return "Xin lỗi, API key không hợp lệ. Vui lòng kiểm tra cấu hình.";
+      }
+      if (error.message.includes('quota')) {
+        return "Xin lỗi, đã vượt quá giới hạn sử dụng API. Vui lòng thử lại sau.";
+      }
+    }
+    
     return "Xin lỗi, hiện tại tôi không thể trả lời. Vui lòng kiểm tra kết nối hoặc thử lại sau.";
   }
 };
